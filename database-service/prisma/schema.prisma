@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Message {
+  id                  String    @id
+  channelId           String
+  timestamp           DateTime
+  type                Int
+  content             String    @db.Text
+  editedTimestamp     DateTime?
+  mentionEveryone     Boolean
+  pinned              Boolean
+  author              Json
+  signals             Signal[]
+}
+
+model Signal {
+  id                 String        @id @default(cuid())
+  status             SignalStatus
+  side               Side
+  entryType          EntryType
+  entryPrice         Float
+  risk               Float?
+  ticker             String
+  messageId          String?
+  message            Message?      @relation(fields: [messageId], references: [id])
+  tradingStops       TradingStop[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model TradingStop {
+  id       String          @id @default(cuid())
+  type     TradingStopType
+  price    Float
+  signalId String?
+  signal   Signal?         @relation(fields: [signalId], references: [id])
+}
+
+enum SignalStatus {
+  opened
+  closed
+}
+
+enum Side {
+  long
+  short
+}
+
+enum EntryType {
+  market
+  limit
+}
+
+enum TradingStopType {
+  stopLoss
+  takeProfit
+}

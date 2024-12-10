@@ -1,0 +1,68 @@
+version: "3.9"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    env_file:
+      - ./.env
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - discord-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - 3306:3306
+    env_file:
+      - ./.env
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - discord-network
+
+  database-service:
+    build:
+      context: ./database-service
+    container_name: database-service
+    depends_on:
+      - rabbitmq
+      - mysql
+    env_file:
+      - ./.env
+    networks:
+      - discord-network
+
+  discord-fetcher-service:
+    build:
+      context: ./discord-fetcher-service
+    container_name: discord-fetcher-service
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./.env
+    networks:
+      - discord-network
+
+  message-processor-service:
+    build:
+      context: ./message-processor-service
+    container_name: message-processor-service
+    depends_on:
+      - rabbitmq
+    env_file:
+      - ./.env
+    networks:
+      - discord-network
+
+networks:
+  discord-network:
+    driver: bridge
+
+volumes:
+  rabbitmq_data:
+  mysql_data:
